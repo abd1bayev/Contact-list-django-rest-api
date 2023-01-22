@@ -1,6 +1,5 @@
 from rest_framework import viewsets, serializers, permissions, views
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
 from .models import Profile, Contact
 
 class ContactSerializer(serializers.ModelSerializer):
@@ -38,12 +37,3 @@ class SignUpSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(validated_data['username'], validated_data['email'], validated_data['password'])
         Profile.objects.create(user=user)
         return user
-
-class SignUpView(views.APIView):
-    permission_classes = (permissions.AllowAny,)
-    serializer_class = SignUpSerializer
-
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()

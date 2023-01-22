@@ -7,6 +7,7 @@ from .models import Contact,Profile
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
+    # http_method_names = ("get",)
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
@@ -42,7 +43,7 @@ class LogoutView(views.APIView):
         logout(request)
         return Response(status=status.HTTP_200_OK)
 
-class TodoViewSet(viewsets.ModelViewSet):
+class ContacViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     permission_classes = (permissions.IsAuthenticated,)
