@@ -26,6 +26,7 @@ class SignUpView(views.APIView):
 class LoginView(views.APIView):
     permission_classes = (permissions.AllowAny,)
 
+
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
