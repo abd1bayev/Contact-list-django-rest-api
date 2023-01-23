@@ -5,6 +5,6 @@ from .views import (
 )
 
 urlpatterns = [
-    path('api/', ContactListApiView.as_view(), name="apicontact1"),
-    path('api/<int:todo_id>/', ContactDetailApiView.as_view(),name="apicontact2"),
+    path('', ContactListApiView.as_view(), name="apicontact1"),
+    path('<int:contact_id>/', ContactDetailApiView.as_view(),name="apicontact2"),
 ]

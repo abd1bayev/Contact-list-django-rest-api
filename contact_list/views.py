@@ -8,7 +8,7 @@ from .serializers import ContactSerializer
 
 class ContactListApiView(APIView):
     # add permission to check if user is authenticated
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ContactSerializer
 
     # 1. Create
@@ -29,10 +29,6 @@ class ContactListApiView(APIView):
 
     # 2. List all
     def get(self, request):
-        '''
-        List all the todo items for given requested user
-        '''
-        # todos = Todo.objects.all()
         todos = Contact.objects.filter(user=request.user.id)
         serializer = ContactSerializer(todos, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -41,24 +37,22 @@ class ContactListApiView(APIView):
 
 class ContactDetailApiView(APIView):
     # add permission to check if user is authenticated
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ContactSerializer
 
-    def get_object(self, todo_id, user_id):
+    def get_object(self, contact_id, user_id):
         '''
         Helper method to get the object with given todo_id, and user_id
         '''
         try:
-            return Contact.objects.get(id=todo_id, user = user_id)
+            return Contact.objects.get(id=contact_id, user = user_id)
         except Contact.DoesNotExist:
             return None
 
     # 3. Retrieve
-    def get(self, request, todo_id, *args, **kwargs):
-        '''
-        Retrieves the Todo with given todo_id
-        '''
-        todo_instance = self.get_object(todo_id, request.user.id)
+    def get(self, request, contact_id, *args, **kwargs):
+
+        todo_instance = self.get_object(contact_id, request.user.id)
         if not todo_instance:
             return Response(
                 {"res": "Object with todo id does not exists"},
@@ -69,11 +63,11 @@ class ContactDetailApiView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # 4. Update
-    def put(self, request, todo_id, *args, **kwargs):
+    def put(self, request, contact_id, *args, **kwargs):
         '''
         Updates the todo item with given todo_id if exists
         '''
-        todo_instance = self.get_object(todo_id, request.user.id)
+        todo_instance = self.get_object(contact_id, request.user.id)
         if not todo_instance:
             return Response(
                 {"res": "Object with todo id does not exists"},
@@ -93,11 +87,9 @@ class ContactDetailApiView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # 5. Delete
-    def delete(self, request, todo_id, *args, **kwargs):
-        '''
-        Deletes the todo item with given todo_id if exists
-        '''
-        todo_instance = self.get_object(todo_id, request.user.id)
+    def delete(self, request, contact_id, *args, **kwargs):
+
+        todo_instance = self.get_object(contact_id, request.user.id)
         if not todo_instance:
             return Response(
                 {"res": "Object with todo id does not exists"},

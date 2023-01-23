@@ -8,7 +8,7 @@ class Contact(models.Model):
     name = models.CharField(max_length = 180)
     phone = models.CharField(max_length = 40)
     updated = models.DateTimeField(auto_now = True, blank = True)
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name

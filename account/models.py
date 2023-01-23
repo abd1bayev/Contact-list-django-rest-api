@@ -1,5 +1,5 @@
 from django.db import models
-from contact_list.models import Contact
+
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.models import BaseUserManager
@@ -8,98 +8,57 @@ from django.contrib.auth.models import BaseUserManager
 class UserProfileManager(BaseUserManager):
     """Djangoga bizning foydalanuvchi modelimiz bilan ishlashga yordam beradi"""
 
-    def create_user(self, email, full_name, password=None, is_admin=False, is_staff=False,
-                    is_active=True):
+    def create_user(self, email, name, password=None):
+        """Yangi foydalanuvchi profili obyektlarini yaratadi"""
+
         if not email:
-            raise ValueError("User must have an email")
-        if not password:
-            raise ValueError("User must have a password")
-        if not full_name:
-            raise ValueError("User must have a full name")
+            raise ValueError('Users must have an email address')
 
-        user = self.model(
-            email=self.normalize_email(email)
-        )
-        user.full_name = full_name
-        user.set_password(password)  # change password to hash
-        user.admin = is_admin
-        user.staff = is_staff
-        user.active = is_active
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, full_name, password=None, **extra_fields):
-        if not email:
-            raise ValueError("User must have an email")
-        if not password:
-            raise ValueError("User must have a password")
-        if not full_name:
-            raise ValueError("User must have a full name")
-
-        user = self.model(
-            email=self.normalize_email(email)
-        )
-        user.full_name = full_name
+        email = self.normalize_email(email)
+        user = self.model(email=email, name=name)
         user.set_password(password)
-        user.admin = True
-        user.staff = True
-        user.active = True
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, name, password):
+        """Berilgan tafsilotlar bilan yangi superfoydalanuvchi yaratadi va saqlaydi"""
+        user = self.create_user(email, name, password)
+        user.is_superuser = True
+        user.is_staff = True
         user.save(using=self._db)
         return user
 
 
-class UserProfile(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin):
     """Tizimimizda "foydalanuvchi profili" ni ifodalaydi."""
-    full_name = models.CharField(max_length=255)
-    email = models.EmailField(max_length=255, unique=True,)
-    gender = models.CharField(max_length=255, blank=True, default='rather_not_say')
-    active = models.BooleanField(default=True)
-    staff = models.BooleanField(default=False)  # a admin user; non super-user
-    admin = models.BooleanField(default=False)
-    phone_numbers = models.ManyToManyField((Contact), blank=True)
 
-
-    # notice the absence of a "Password field", that's built in.
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['full_name', 'gender']  # Email & Password are required by default.
+    email = models.EmailField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
     objects = UserProfileManager()
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['name']
+
     def get_full_name(self):
-        # The user is identified by their email address
-        return self.email
+        """Foydalanuvchilarning to'liq ismini olish uchun foydalaniladi."""
+        return self.name
 
     def get_short_name(self):
-         # The user is identified by their email address
-         return self.email
+        """Foydalanuvchilarning qisqa nomini olish uchun foydalaniladi."""
+        return self.name
 
-    def __str__(self):              # __unicode__ on Python 2
-         return self.email
+    def __str__(self):
+        return self.email
 
-    @staticmethod
-    def has_perm(perm, obj=None):
-         # "Does the user have a specific permission?"
-         # Simplest possible answer: Yes, always
-        return True
 
-    @staticmethod
-    def has_module_perms(app_label):
-         # "Does the user have permissions to view the app `app_label`?"
-         # Simplest possible answer: Yes, always
-         return True
+class ProfileFeedItem(models.Model):
+    """Profil holatini yangilash."""
+    user_profile = models.ForeignKey('User', on_delete=models.CASCADE)
+    status_text = models.CharField(max_length=255)
+    created_on = models.DateTimeField(auto_now_add=True)
 
-    @property
-    def is_staff(self):
-         # "Is the user a member of staff?"
-         return self.staff
-
-    @property
-    def is_admin(self):
-         # "Is the user a admin member?"
-         return self.admin
-
-    @property
-    def is_active(self):
-         # "Is the user active?"
-         return self.active
+    def __str__(self):
+        return self.status_text
