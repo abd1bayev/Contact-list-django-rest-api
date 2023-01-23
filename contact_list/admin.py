@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import Contact, Profile
+from .models import Contact
 
-admin.site.register(Contact)
-admin.site.register(Profile)
+# Register your models here.
+@admin.register(Contact)
+class ContactAdmin(admin.ModelAdmin):
+    """Contact admin"""
+    list_display = ("id","name", "phone", "updated", "user")
+    list_display_links = ("name",)

@@ -1,53 +1,110 @@
-from django.contrib.auth import authenticate, login, logout
-from rest_framework import views, permissions, status, viewsets
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import SignUpSerializer, ContactSerializer, ProfileSerializer
-from .models import Contact,Profile
-
-class ProfileViewSet(viewsets.ModelViewSet):
-    queryset = Profile.objects.all()
-    serializer_class = ProfileSerializer
-    # http_method_names = ("get",)
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
-
-class SignUpView(views.APIView):
-    permission_classes = (permissions.AllowAny,)
-    serializer_class = SignUpSerializer
-
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(status=status.HTTP_201_CREATED)
-
-class LoginView(views.APIView):
-    permission_classes = (permissions.AllowAny,)
+from rest_framework import status
+from rest_framework import permissions
+from .models import Contact
+from .serializers import ContactSerializer
 
 
-    def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return Response(status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-
-class LogoutView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def post(self, request):
-        logout(request)
-        return Response(status=status.HTTP_200_OK)
-
-class ContacViewSet(viewsets.ModelViewSet):
-    queryset = Contact.objects.all()
+class ContactListApiView(APIView):
+    # add permission to check if user is authenticated
+    # permission_classes = [permissions.IsAuthenticated]
     serializer_class = ContactSerializer
-    permission_classes = (permissions.IsAuthenticated,)
 
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
+    # 1. Create
+    def post(self, request):
+        serializer = ContactSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'status' : True,
+                'message' : 'Success',
+                'Data' : serializer.data},
+                status=status.HTTP_201_CREATED)
+        else :
+            return Response({
+                'status' : False,
+                'message' : "Error"},
+                status = status.HTTP_400_BAD_REQUEST)
+
+    # 2. List all
+    def get(self, request):
+        '''
+        List all the todo items for given requested user
+        '''
+        # todos = Todo.objects.all()
+        todos = Contact.objects.filter(user=request.user.id)
+        serializer = ContactSerializer(todos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class ContactDetailApiView(APIView):
+    # add permission to check if user is authenticated
+    # permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ContactSerializer
+
+    def get_object(self, todo_id, user_id):
+        '''
+        Helper method to get the object with given todo_id, and user_id
+        '''
+        try:
+            return Contact.objects.get(id=todo_id, user = user_id)
+        except Contact.DoesNotExist:
+            return None
+
+    # 3. Retrieve
+    def get(self, request, todo_id, *args, **kwargs):
+        '''
+        Retrieves the Todo with given todo_id
+        '''
+        todo_instance = self.get_object(todo_id, request.user.id)
+        if not todo_instance:
+            return Response(
+                {"res": "Object with todo id does not exists"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ContactSerializer(todo_instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # 4. Update
+    def put(self, request, todo_id, *args, **kwargs):
+        '''
+        Updates the todo item with given todo_id if exists
+        '''
+        todo_instance = self.get_object(todo_id, request.user.id)
+        if not todo_instance:
+            return Response(
+                {"res": "Object with todo id does not exists"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        data = {
+            'text': request.data.get('text'),
+            'image': request.data.get('image'),
+            'description': request.data.get('description'),
+            'completed': request.data.get('completed'),
+            'user': request.user.id
+        }
+        serializer = ContactSerializer(instance = todo_instance, data=data, partial = True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # 5. Delete
+    def delete(self, request, todo_id, *args, **kwargs):
+        '''
+        Deletes the todo item with given todo_id if exists
+        '''
+        todo_instance = self.get_object(todo_id, request.user.id)
+        if not todo_instance:
+            return Response(
+                {"res": "Object with todo id does not exists"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        todo_instance.delete()
+        return Response(
+            {"res": "Object deleted!"},
+            status=status.HTTP_200_OK
+        )

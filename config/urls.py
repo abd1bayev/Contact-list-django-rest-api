@@ -22,9 +22,9 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Giermart API",
+        title="Contact List API",
         default_version='v1',
-        description="Documentation Gipermart",
+        description="Documentation Contact List",
         license=openapi.License(name="BSD License"),
     ),
     public=True,
@@ -35,6 +35,7 @@ urlpatterns = [
     path('', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('admin/', admin.site.urls),
-    path('user/', include('contact_list.urls'))
+    path('account/', include('account.urls')),
+    path('contact/', include('contact_list.urls'))
 
 ]
